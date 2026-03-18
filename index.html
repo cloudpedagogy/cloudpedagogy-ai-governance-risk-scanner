@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CloudPedagogy AI Governance Risk Scanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <div id="privacy-toast" style="background: var(--color-primary); color: white; text-align: center; padding: 0.5rem; font-size: 0.75rem; font-weight: 600;">
+        🛡️ Privacy-First: All data remains in your browser. No data leaves this device.
+      </div>
+      <header>
+        <div class="brand">
+          <span class="subtitle">Human–AI Governance Engineering</span>
+          <h1>Risk Scanner</h1>
+        </div>
+        <nav class="no-print">
+          <button id="btn-new-assessment" type="button" class="btn btn-outline" style="margin-right: 0.5rem;">New Assessment</button>
+          <button id="btn-import-json" type="button" class="btn btn-outline">Import JSON</button>
+        </nav>
+      </header>
+
+      <main>
+        <!-- Home / Welcome View -->
+        <section id="view-home" class="view active">
+          <div class="card">
+            <h2>Start a Governance Risk Assessment</h2>
+            <p style="margin-bottom: 2rem;">Analyze AI-supported workflows to identify fragility, oversight gaps, and systemic risks. This tool is private, local-first, and designed for rigorous governance audits.</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary start-workflow">Manual Input</button>
+              <button type="button" class="btn btn-outline import-workflow">Import Workflow</button>
+              <button id="btn-load-demo" type="button" class="btn btn-outline" style="border-style: dashed; border-color: var(--color-accent); color: var(--color-accent);">Load Demo (Healthcare)</button>
+            </div>
+          </div>
+          
+          <div class="audit-grid">
+            <div class="card">
+              <h3>Governance-First Analysis</h3>
+              <p>Go beyond simple checklists. Evaluate bias, operational, ethical, and privacy risks across every decision node.</p>
+            </div>
+            <div class="card">
+              <h3>Audit-Ready Reporting</h3>
+              <p>Generate structured Governance Risk Reports in Markdown and PDF format for accountability and traceability.</p>
+            </div>
+            <div class="card">
+              <h3>Fragility Detection</h3>
+              <p>Identify single points of failure and hidden AI dependency chains that compromise system reliability.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Input Workflow View -->
+        <section id="view-input" class="view">
+          <div class="card">
+            <h2>1. Define Workflow Structure</h2>
+            <p style="margin-bottom: 1.5rem;">Enter the steps of the workflow or decision process you wish to analyze.</p>
+            
+            <div id="steps-container">
+              <!-- Steps will be injected here -->
+            </div>
+            
+            <button id="add-step" class="btn btn-outline" style="width: 100%; margin: 1rem 0;">+ Add Step</button>
+            
+            <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+              <button class="btn btn-outline back-home">Cancel</button>
+              <button id="proceed-to-assessment" class="btn btn-primary">Proceed to Assessment</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Risk Assessment View -->
+        <section id="view-assessment" class="view">
+          <div id="assessment-content">
+            <!-- Dynamic assessment form will be injected here -->
+          </div>
+        </section>
+
+        <!-- Final Report View -->
+        <section id="view-report" class="view">
+          <div id="report-content">
+            <!-- Final summary report will be injected here -->
+          </div>
+          <div class="no-print" style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
+            <button id="export-json" class="btn btn-outline">Export JSON</button>
+            <button id="export-markdown" class="btn btn-outline">Export Markdown</button>
+            <button onclick="window.print()" class="btn btn-primary">Print / Export PDF</button>
+          </div>
+        </section>
+      </main>
+
+      <footer class="no-print" style="margin-top: 4rem; padding: 2rem 0; border-top: 1px solid var(--border-light); font-size: 0.875rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span>CloudPedagogy AI Governance Risk Scanner</span>
+        <span>Capability-Driven Development (CDD)</span>
+      </footer>
+    </div>
+    
+    <!-- Modals / Overlays -->
+    <div id="modal-import" class="view" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; place-items: center; z-index: 100;">
+      <div class="card" style="width: 90%; max-width: 600px;">
+        <h2>Import Workflow JSON</h2>
+        <p>Paste structured JSON from the Workflow Designer or Decision Record Tool.</p>
+        <textarea id="import-area" style="height: 200px; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.875rem;" placeholder='{ "steps": [...] }'></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+          <button id="import-cancel" class="btn btn-outline">Cancel</button>
+          <button id="import-confirm" class="btn btn-primary">Load Workflow</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="modal-confirm" class="view" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; place-items: center; z-index: 101;">
+      <div class="card" style="width: 90%; max-width: 400px; text-align: center;">
+        <h2 style="color: var(--risk-high);">Start New Assessment?</h2>
+        <p style="margin: 1.5rem 0;">This will clear all current data. This action cannot be undone.</p>
+        <div style="display: flex; justify-content: center; gap: 1rem;">
+          <button id="confirm-cancel" class="btn btn-outline">Cancel</button>
+          <button id="confirm-proceed" class="btn btn-primary" style="background: var(--risk-high); border-color: var(--risk-high);">Start Fresh</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

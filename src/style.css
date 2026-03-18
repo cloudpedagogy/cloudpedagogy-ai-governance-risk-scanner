@@ -1,0 +1,237 @@
+:root {
+  /* Color Palette - Professional Audit Theme (Slate/Indigo) */
+  --color-primary-hue: 230;
+  --color-primary: hsl(var(--color-primary-hue), 30%, 20%);
+  --color-primary-light: hsl(var(--color-primary-hue), 20%, 95%);
+  --color-accent: hsl(var(--color-primary-hue), 60%, 50%);
+  --color-accent-hover: hsl(var(--color-primary-hue), 60%, 45%);
+  
+  /* Semantic Colors for Risk */
+  --risk-low: hsl(150, 40%, 40%);
+  --risk-medium: hsl(45, 90%, 45%);
+  --risk-high: hsl(10, 80%, 50%);
+  --risk-critical: hsl(0, 85%, 45%);
+  
+  /* Neutral Palette */
+  --bg-app: #fcfcfd;
+  --bg-card: #ffffff;
+  --text-main: #1a1c21;
+  --text-muted: #585e6c;
+  --border-light: #e2e4e9;
+  --border-dark: #cbd0da;
+  
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Layout */
+  --container-max-width: 1200px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+#app {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header & Navigation */
+header {
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+  transition: transform 0.3s ease;
+}
+
+h1:hover {
+  transform: translateX(5px);
+}
+
+.brand .subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Main Content Areas */
+main {
+  flex-grow: 1;
+}
+
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* UI Components */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 2rem;
+}
+
+.card h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-dark);
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-primary);
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px hsla(var(--color-primary-hue), 60%, 50%, 0.1);
+  transform: scale(1.01);
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tooltip concept */
+.audit-info {
+  display: inline-block;
+  margin-left: 5px;
+  color: var(--text-muted);
+  cursor: help;
+  font-size: 0.8rem;
+}
+
+/* Risk Indicators */
+.risk-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.risk-tag.low { background: hsla(150, 40%, 40%, 0.1); color: var(--risk-low); }
+.risk-tag.medium { background: hsla(45, 90%, 45%, 0.1); color: var(--risk-medium); }
+.risk-tag.high { background: hsla(10, 80%, 50%, 0.1); color: var(--risk-high); }
+.risk-tag.critical { background: hsla(0, 85%, 45%, 0.1); color: var(--risk-critical); }
+
+/* Print Styles */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  #app { padding: 0; }
+  .card { border: 1px solid #000; box-shadow: none; break-inside: avoid; }
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CloudPedagogy AI Governance Risk Assessment Schema",
+  "type": "object",
+  "properties": {
+    "workflow_metadata": {
+      "type": "object",
+      "properties": {
+        "workflow_id": { "type": "string" },
+        "assessment_id": { "type": "string" },
+        "date_created": { "type": "string", "format": "date-time" },
+        "assessor_name": { "type": "string" }
+      },
+      "required": ["workflow_id", "assessment_id", "date_created"]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step_id": { "type": "string" },
+          "step_name": { "type": "string" },
+          "description": { "type": "string" },
+          "ai_involved": { "type": "boolean" },
+          "risks": {
+            "type": "object",
+            "properties": {
+              "bias_risk": { "$ref": "#/definitions/risk_detail" },
+              "operational_risk": { "$ref": "#/definitions/risk_detail" },
+              "ethical_risk": { "$ref": "#/definitions/risk_detail" },
+              "governance_risk": { "$ref": "#/definitions/risk_detail" },
+              "privacy_risk": { "$ref": "#/definitions/risk_detail" }
+            }
+          },
+          "oversight": {
+            "type": "object",
+            "properties": {
+              "human_review_present": { "type": "boolean" },
+              "accountability_defined": { "type": "boolean" },
+              "escalation_defined": { "type": "boolean" },
+              "oversight_notes": { "type": "string" }
+            }
+          },
+          "failure_modes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": { "type": "string" },
+                "impact": { "type": "string" },
+                "cascade_effects": { "type": "string" }
+              }
+            }
+          },
+          "mitigation": {
+            "type": "object",
+            "properties": {
+              "controls": { "type": "string" },
+              "safeguards": { "type": "string" },
+              "monitoring": { "type": "string" }
+            }
+          }
+        },
+        "required": ["step_id", "step_name"]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "overall_risk_score": { "type": "number" },
+        "high_risk_steps_count": { "type": "integer" },
+        "oversight_gaps_count": { "type": "integer" },
+        "ai_dependency_percentage": { "type": "number" },
+        "reflection_notes": { "type": "string" }
+      }
+    }
+  },
+  "definitions": {
+    "risk_detail": {
+      "type": "object",
+      "properties": {
+        "severity": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "likelihood": { "type": "string", "enum": ["Unlikely", "Possible", "Likely", "Almost Certain"] },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}
