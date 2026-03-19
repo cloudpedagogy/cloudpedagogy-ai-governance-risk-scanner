@@ -67,36 +67,34 @@ Access the live tool:
 http://cloudpedagogy-ai-governance-risk-scanner.s3-website.eu-west-2.amazonaws.com/
 
 ---
-
-## 🏗️ Technology Stack
-
-- **Frontend**: HTML5, Vanilla CSS, Vanilla JavaScript  
-- **Build Tool**: Vite  
-- **Deployment**: Static site (AWS S3, GitHub Pages, or local hosting)  
-
----
-
 ## 🛠️ Getting Started
 
-1. **Clone the repository**:
-   ```bash
-   git clone [repository-url]
-   ```
+### Clone the repository
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+```bash
+git clone [repository-url]
+cd [repository-folder]
+```
 
-3. **Run locally**:
-   ```bash
-   npm run dev
-   ```
+### Install dependencies
 
-4. **Build for production**:
-   ```bash
-   npm run build
-   ```
+```bash
+npm install
+```
+
+### Run locally
+
+```bash
+npm run dev
+```
+
+Once running, your terminal will display a local URL (often http://localhost:5173). Open this in your browser to use the application.
+
+### Build for production
+
+```bash
+npm run build
+```
 
 The production build will be generated in the `dist/` directory and can be deployed to any static hosting service.
 
