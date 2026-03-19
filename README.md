@@ -68,7 +68,9 @@ http://cloudpedagogy-ai-governance-risk-scanner.s3-website.eu-west-2.amazonaws.c
 
 ---
 
+## 🖼️ Screenshot
 
+![AI Governance Risk Scanner Screenshot](./assets/screenshot1.png)
 
 ---
 ## 🛠️ Getting Started
