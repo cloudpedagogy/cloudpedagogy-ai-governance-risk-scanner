@@ -67,6 +67,12 @@ Access the live tool:
 http://cloudpedagogy-ai-governance-risk-scanner.s3-website.eu-west-2.amazonaws.com/
 
 ---
+
+## 🖼️ Screenshot
+
+![AI Governance Risk Scanner Screenshot](./assets/screenshot.png)
+
+---
 ## 🛠️ Getting Started
 
 ### Clone the repository
