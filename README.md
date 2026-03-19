@@ -60,7 +60,7 @@ Decision → Workflow → Risk → Capability
 
 ---
 
-## 🌐 Live Application
+## 🌐 Live Hosted Version
 
 Access the live tool:
 
