@@ -139,12 +139,9 @@ function addStepRow(stepData = null) {
   const stepDiv = document.createElement('div');
   stepDiv.className = 'card step-row';
   stepDiv.dataset.id = stepId;
-  stepDiv.style.marginBottom = '1rem';
-  stepDiv.style.padding = '1rem';
-  stepDiv.style.borderLeft = '4px solid var(--color-primary)';
   
   stepDiv.innerHTML = `
-    <div style="display: flex; gap: 1rem; align-items: flex-start;">
+    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
       <div style="flex-grow: 1;">
         <label>Step Name</label>
         <input type="text" class="step-name" value="${stepData ? stepData.step_name : ''}" placeholder="e.g., Credit Decision AI model">
@@ -156,7 +153,7 @@ function addStepRow(stepData = null) {
           <option value="false" ${stepData && stepData.ai_involved === false ? 'selected' : ''}>No</option>
         </select>
       </div>
-      <button class="btn btn-outline remove-step" style="margin-top: 1.8rem; color: var(--risk-high); border-color: var(--risk-high);">×</button>
+      <button class="btn btn-outline remove-step" style="margin-top: 1.8rem;">×</button>
     </div>
   `;
   
@@ -240,8 +237,11 @@ function proceedToAssessment() {
 function renderAssessmentForm() {
   const container = document.getElementById('assessment-content');
   container.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-      <h2>2. Risk & Governance Assessment</h2>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem;">
+      <div>
+        <span class="subtitle">Operational Audit</span>
+        <h2>2. Risk & Governance Assessment</h2>
+      </div>
       <button id="final-generate-report" class="btn btn-primary">Generate Final Report</button>
     </div>
   `;
@@ -250,43 +250,43 @@ function renderAssessmentForm() {
     const stepCard = document.createElement('div');
     stepCard.className = 'card';
     stepCard.innerHTML = `
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
-        <h3 style="color: var(--color-primary);">Step ${index + 1}: ${step.step_name}</h3>
-        <span class="risk-tag ${step.ai_involved ? 'high' : 'low'}">${step.ai_involved ? 'AI SUPPORTED' : 'MANUAL'}</span>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 2rem;">
+        <h3>Step ${index + 1}: ${step.step_name}</h3>
+        <span class="risk-tag">${step.ai_involved ? 'AI SUPPORTED' : 'MANUAL'}</span>
       </div>
 
       <div class="audit-grid">
         <!-- Risk Dimensions -->
         <div style="grid-column: span 2;">
-          <h4 style="margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Risk Dimensions</h4>
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <h4>Risk Dimensions</h4>
+          <table>
             <thead>
-              <tr style="text-align: left; border-bottom: 2px solid var(--border-light);">
-                <th style="padding: 0.5rem;">Dimension</th>
-                <th style="padding: 0.5rem;">Severity</th>
-                <th style="padding: 0.5rem;">Likelihood</th>
-                <th style="padding: 0.5rem;">Analysis / Notes</th>
+              <tr>
+                <th>Dimension</th>
+                <th>Severity</th>
+                <th>Likelihood</th>
+                <th>Analysis / Notes</th>
               </tr>
             </thead>
             <tbody>
               ${['bias_risk', 'operational_risk', 'ethical_risk', 'governance_risk', 'privacy_risk'].map(riskKey => `
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 0.5rem; font-weight: 600;">
+                <tr>
+                  <td style="font-weight: 600; color: var(--text-secondary);">
                     ${riskKey.replace('_', ' ').toUpperCase()}
                     <span class="audit-info" title="Evaluate potential ${riskKey.replace('_', ' ')} for this step.">ⓘ</span>
                   </td>
-                  <td style="padding: 0.5rem;">
+                  <td>
                     <select class="risk-input" data-step="${index}" data-risk="${riskKey}" data-field="severity">
                       <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
                     </select>
                   </td>
-                  <td style="padding: 0.5rem;">
+                  <td>
                     <select class="risk-input" data-step="${index}" data-risk="${riskKey}" data-field="likelihood">
                       <option>Unlikely</option><option>Possible</option><option>Likely</option><option>Almost Certain</option>
                     </select>
                   </td>
-                  <td style="padding: 0.5rem;">
-                    <input type="text" class="risk-input" data-step="${index}" data-risk="${riskKey}" data-field="notes" placeholder="e.g. training data bias">
+                  <td>
+                    <input type="text" class="risk-input" data-step="${index}" data-risk="${riskKey}" data-field="notes" placeholder="Notes">
                   </td>
                 </tr>
               `).join('')}
@@ -296,28 +296,31 @@ function renderAssessmentForm() {
 
         <!-- Oversight & Governance -->
         <div>
-          <h4 style="margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Governance Controls</h4>
-          <div class="form-group">
-            <label><input type="checkbox" class="gov-input" data-step="${index}" data-field="human_review_present"> Human Review Present</label>
+          <h4>Governance Controls</h4>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+            <input type="checkbox" class="gov-input" data-step="${index}" data-field="human_review_present" id="hr-${index}">
+            <label for="hr-${index}" style="margin-bottom: 0;">Human Review Present</label>
           </div>
-          <div class="form-group">
-            <label><input type="checkbox" class="gov-input" data-step="${index}" data-field="accountability_defined"> Accountability Defined</label>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" class="gov-input" data-step="${index}" data-field="accountability_defined" id="ad-${index}">
+            <label for="ad-${index}" style="margin-bottom: 0;">Accountability Defined</label>
           </div>
-          <div class="form-group">
-            <label><input type="checkbox" class="gov-input" data-step="${index}" data-field="escalation_defined"> Escalation defined</label>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" class="gov-input" data-step="${index}" data-field="escalation_defined" id="ed-${index}">
+            <label for="ed-${index}" style="margin-bottom: 0;">Escalation Defined</label>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-top: 1rem;">
             <label>Oversight Notes</label>
-            <textarea class="gov-input" data-step="${index}" data-field="oversight_notes" style="height: 60px;"></textarea>
+            <textarea class="gov-input" data-step="${index}" data-field="oversight_notes" style="height: 80px;"></textarea>
           </div>
         </div>
 
         <!-- Failure Modes -->
         <div>
-          <h4 style="margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Failure Analysis</h4>
-          <div class="form-group">
+          <h4>Failure Analysis</h4>
+          <div class="form-group" style="margin-top: 1rem;">
             <label>Failure Mode Description</label>
-            <input type="text" class="fail-input" data-step="${index}" data-field="description" placeholder="What happens if AI is wrong?">
+            <input type="text" class="fail-input" data-step="${index}" data-field="description" placeholder="e.g. model drift">
           </div>
           <div class="form-group">
             <label>Impact & Cascading Effects</label>
@@ -327,19 +330,19 @@ function renderAssessmentForm() {
 
         <!-- Mitigation Planning -->
         <div style="grid-column: span 2;">
-          <h4 style="margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted);">Mitigation Planning</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <h4>Mitigation Planning</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
             <div class="form-group">
               <label>Technical Controls</label>
-              <input type="text" class="mit-input" data-step="${index}" data-field="controls" placeholder="e.g. data validation layer">
+              <input type="text" class="mit-input" data-step="${index}" data-field="controls" placeholder="e.g. guardrails">
             </div>
             <div class="form-group">
               <label>Governance Safeguards</label>
-              <input type="text" class="mit-input" data-step="${index}" data-field="safeguards" placeholder="e.g. mandatory peer review">
+              <input type="text" class="mit-input" data-step="${index}" data-field="safeguards" placeholder="e.g. peer review">
             </div>
             <div class="form-group">
               <label>Monitoring Requirements</label>
-              <input type="text" class="mit-input" data-step="${index}" data-field="monitoring" placeholder="e.g. weekly bias audits">
+              <input type="text" class="mit-input" data-step="${index}" data-field="monitoring" placeholder="e.g. audit logs">
             </div>
           </div>
         </div>
@@ -425,46 +428,45 @@ function renderReport() {
   const summary = appState.assessment.summary;
   
   let riskLevel = 'Low';
-  let riskClass = 'low';
-  if (summary.overall_risk_score > 4) { riskLevel = 'Moderate'; riskClass = 'medium'; }
-  if (summary.overall_risk_score > 8) { riskLevel = 'High'; riskClass = 'high'; }
-  if (summary.overall_risk_score > 12) { riskLevel = 'Critical'; riskClass = 'critical'; }
+  if (summary.overall_risk_score > 4) { riskLevel = 'Moderate'; }
+  if (summary.overall_risk_score > 8) { riskLevel = 'High'; }
+  if (summary.overall_risk_score > 12) { riskLevel = 'Critical'; }
 
   container.innerHTML = `
-    <div class="card" style="border-top: 10px solid var(--color-primary);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+    <div class="card" style="border-top: 4px solid var(--border-strong);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
         <div>
           <span class="subtitle">Governance Risk Report</span>
           <h2>Assessment Summary</h2>
         </div>
-        <div style="text-align: right;">
-          <p style="font-size: 0.75rem; color: var(--text-muted);">Assessed On: ${new Date(appState.assessment.workflow_metadata.date_created).toLocaleDateString()}</p>
-          <p style="font-size: 0.75rem; color: var(--text-muted);">ID: ${appState.assessment.workflow_metadata.assessment_id}</p>
+        <div style="text-align: right; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted);">
+          <div>Date: ${new Date(appState.assessment.workflow_metadata.date_created).toLocaleDateString()}</div>
+          <div>ID: ${appState.assessment.workflow_metadata.assessment_id}</div>
         </div>
       </div>
 
       <div class="audit-grid" style="grid-template-columns: repeat(4, 1fr);">
-        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px;">
-          <span class="subtitle" style="font-size: 0.6rem;">Overall Risk Profile</span>
-          <div style="font-size: 1.5rem; font-weight: 800;" class="risk-tag ${riskClass}">${riskLevel}</div>
+        <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
+          <span class="subtitle">Overall Profile</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${riskLevel}</div>
         </div>
-        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px;">
-          <span class="subtitle" style="font-size: 0.6rem;">High Risk Steps</span>
-          <div style="font-size: 1.5rem; font-weight: 800;">${summary.high_risk_steps_count}</div>
+        <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
+          <span class="subtitle">High Risk Steps</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${summary.high_risk_steps_count}</div>
         </div>
-        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px;">
-          <span class="subtitle" style="font-size: 0.6rem;">Oversight Gaps</span>
-          <div style="font-size: 1.5rem; font-weight: 800; color: var(--risk-high);">${summary.oversight_gaps_count}</div>
+        <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
+          <span class="subtitle">Oversight Gaps</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${summary.oversight_gaps_count}</div>
         </div>
-        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px;">
-          <span class="subtitle" style="font-size: 0.6rem;">AI Dependency</span>
-          <div style="font-size: 1.5rem; font-weight: 800;">${summary.ai_dependency_percentage}%</div>
+        <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
+          <span class="subtitle">AI Dependency</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${summary.ai_dependency_percentage}%</div>
         </div>
       </div>
 
-      <div style="margin-top: 2rem;">
-        <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem;">Systemic Risk Heatmap</h4>
-        <div style="display: flex; gap: 4px; height: 30px;">
+      <div style="margin-top: 3rem;">
+        <h4>Systemic Risk Heatmap</h4>
+        <div style="display: flex; gap: 4px; height: 12px; margin-top: 1rem;">
           ${appState.assessment.steps.map(step => {
             let maxScore = 0;
             const riskValues = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
@@ -473,82 +475,83 @@ function renderReport() {
               const s = riskValues[r.severity] * likelihoodValues[r.likelihood];
               if (s > maxScore) maxScore = s;
             });
-            let color = 'var(--risk-low)';
-            if (maxScore > 4) color = 'var(--risk-medium)';
-            if (maxScore > 8) color = 'var(--risk-high)';
-            if (maxScore > 12) color = 'var(--risk-critical)';
-            return `<div title="${step.step_name}: Score ${maxScore}" style="flex-grow: 1; background: ${color}; border-radius: 2px;"></div>`;
+            // Monochrome scale based on risk
+            let color = '#f3f4f6'; // Low
+            if (maxScore > 4) color = '#d1d5db'; // Moderate
+            if (maxScore > 8) color = '#4b5563'; // High
+            if (maxScore > 12) color = '#111111'; // Critical
+            return `<div title="${step.step_name}: Score ${maxScore}" style="flex-grow: 1; background: ${color}; border-radius: 1px;"></div>`;
           }).join('')}
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
-          <span>Step 1</span>
-          <span>Step ${appState.assessment.steps.length}</span>
+        <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-top: 8px; font-family: var(--font-mono);">
+          <span>START</span>
+          <span>END</span>
         </div>
       </div>
     </div>
 
-    <h3>Detailed Step Analysis</h3>
+    <h3 style="margin-top: 4rem; margin-bottom: 2rem;">Detailed Step Analysis</h3>
     ${appState.assessment.steps.map(step => {
       const isFragile = step.ai_involved && (!step.oversight.human_review_present || !step.oversight.escalation_defined);
       return `
-      <div class="card" style="border-left: 5px solid ${step.ai_involved ? 'var(--color-accent)' : 'var(--border-dark)'}; position: relative;">
-        ${isFragile ? '<span style="position: absolute; top: 1rem; right: 1rem; font-size: 0.7rem; color: var(--risk-high); font-weight: 700; text-transform: uppercase; border: 1px solid var(--risk-high); padding: 2px 6px; border-radius: 4px;">⚠️ Fragility Node</span>' : ''}
-        <h4>${step.step_name}</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+      <div class="card" style="position: relative;">
+        ${isFragile ? '<span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 0.6rem; color: #111111; font-weight: 700; text-transform: uppercase; border: 1px solid #111111; padding: 2px 6px; border-radius: 2px;">Fragility Node</span>' : ''}
+        <h3>${step.step_name}</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2rem;">
           <div>
-            <h5 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">Governance Status</h5>
-            <ul style="font-size: 0.875rem; list-style: none; margin-top: 0.5rem;">
-              <li style="display: flex; justify-content: space-between;">Human Review: <span>${step.oversight.human_review_present ? '✅' : '❌'}</span></li>
-              <li style="display: flex; justify-content: space-between;">Accountability: <span>${step.oversight.accountability_defined ? '✅' : '❌'}</span></li>
-              <li style="display: flex; justify-content: space-between;">Escalation Path: <span>${step.oversight.escalation_defined ? '✅' : '❌'}</span></li>
+            <h4>Governance Status</h4>
+            <ul style="font-size: 0.875rem; list-style: none; margin-top: 1rem; padding: 0;">
+              <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);">Human Review <span>${step.oversight.human_review_present ? '✓' : '—'}</span></li>
+              <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);">Accountability <span>${step.oversight.accountability_defined ? '✓' : '—'}</span></li>
+              <li style="display: flex; justify-content: space-between; padding: 0.5rem 0;">Escalation Path <span>${step.oversight.escalation_defined ? '✓' : '—'}</span></li>
             </ul>
           </div>
           <div>
-            <h5 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">Primary Fragility</h5>
-            <p style="font-size: 0.875rem; margin-top: 0.5rem;">${step.failure_modes[0].description || 'No failure mode defined.'}</p>
+            <h4>Primary Fragility</h4>
+            <p style="font-size: 0.875rem; margin-top: 1rem; color: var(--text-secondary);">${step.failure_modes[0].description || 'Analysis not provided.'}</p>
           </div>
         </div>
-        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border-light);">
-          <h5 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">Mitigation Strategy</h5>
-          <p style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--color-primary); font-weight: 500;">
-            ${step.mitigation.controls || 'No technical controls defined.'} / 
-            ${step.mitigation.safeguards || 'No safeguards defined.'}
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+          <h4>Mitigation Strategy</h4>
+          <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+            ${step.mitigation.controls || 'N/A'} · 
+            ${step.mitigation.safeguards || 'N/A'}
           </p>
         </div>
       </div>
     `;
     }).join('')}
 
-    <div class="card" style="border-left: 5px solid var(--risk-high);">
-      <h3 style="color: var(--risk-high); margin-bottom: 1rem;">Governance Gap Alerts</h3>
-      <ul style="padding-left: 1.2rem;">
+    <div class="card" style="background: #fafafa;">
+      <h3 style="margin-bottom: 1.5rem;">Governance Alerts</h3>
+      <ul style="padding-left: 1.2rem; font-size: 0.875rem;">
         ${appState.assessment.steps.filter(s => s.ai_involved && !s.oversight.human_review_present).map(s => `
-          <li style="margin-bottom: 0.5rem;"><strong>Critical Oversight Gap</strong>: Step "${s.step_name}" uses AI but lacks human review.</li>
+          <li style="margin-bottom: 0.75rem;"><strong>Oversight Gap</strong>: Step "${s.step_name}" uses AI but lacks clinician/human review.</li>
         `).join('')}
         ${appState.assessment.steps.filter(s => !s.oversight.accountability_defined).map(s => `
-          <li style="margin-bottom: 0.5rem;"><strong>Accountability Gap</strong>: No clear owner defined for "${s.step_name}".</li>
+          <li style="margin-bottom: 0.75rem;"><strong>Accountability Gap</strong>: No clear owner defined for "${s.step_name}".</li>
         `).join('')}
         ${appState.assessment.steps.filter(s => s.ai_involved && !s.oversight.escalation_defined).map(s => `
-          <li style="margin-bottom: 0.5rem;"><strong>Fragility Alert</strong>: No escalation path for AI failure in "${s.step_name}".</li>
+          <li style="margin-bottom: 0.75rem;"><strong>Fragility Alert</strong>: No escalation path for AI failure in "${s.step_name}".</li>
         `).join('')}
-        ${appState.assessment.summary.oversight_gaps_count === 0 ? '<li>No major governance gaps detected in current assessment.</li>' : ''}
+        ${appState.assessment.summary.oversight_gaps_count === 0 ? '<li>No major governance gaps detected.</li>' : ''}
       </ul>
     </div>
 
     <div class="card no-print">
-      <h3>3. Governance Reflection</h3>
-      <p style="margin-bottom: 1.5rem; font-style: italic; color: var(--text-muted);">Governance requires active reflection on assumptions and systemic risks.</p>
+      <h3>Governance Reflection</h3>
+      <p style="margin-bottom: 2rem; font-size: 0.875rem; color: var(--text-muted);">Active reflection on assumptions and systemic risks is a core governance requirement.</p>
       
       <div class="form-group">
-        <label>What risks are underestimated in this assessment?</label>
+        <label>Underestimated Risks</label>
         <textarea id="ref-underestimated" class="ref-input" style="height: 80px;">${appState.assessment.summary.reflection_notes || ''}</textarea>
       </div>
       <div class="form-group">
-        <label>What would cause a total system failure?</label>
+        <label>Systemic Failure Scenarios</label>
         <textarea id="ref-failure" class="ref-input" style="height: 80px;"></textarea>
       </div>
       <div class="form-group">
-        <label>What needs immediate human intervention or manual override?</label>
+        <label>Immediate Human Interventions</label>
         <textarea id="ref-override" class="ref-input" style="height: 80px;"></textarea>
       </div>
     </div>
