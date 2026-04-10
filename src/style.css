@@ -4,15 +4,29 @@
   --bg-card: #ffffff;
   
   --text-main: #111111;
-  --text-secondary: #444444;
-  --text-muted: #666666;
+  --text-secondary: #555555;
+  --text-muted: #555555;
   
   --border-light: #e5e7eb;
   --border-strong: #111111;
   
+  /* Design Tokens - Foundation */
+  --color-text-primary: var(--text-main);
+  --color-text-secondary: var(--text-secondary);
+  --color-border-default: var(--border-light);
+  --color-border-strong: var(--border-strong);
+
+  --font-size-body: 14px;
+  --font-size-meta: 13px;
+  --font-size-small: 12px;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  
   /* Typography */
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   
   /* Layout */
   --container-max-width: 1200px;
@@ -28,6 +42,7 @@
 
 body {
   font-family: var(--font-sans);
+  font-size: var(--font-size-body);
   background-color: var(--bg-app);
   color: var(--text-main);
   line-height: 1.5;
@@ -50,7 +65,7 @@ h3 { font-size: 1.125rem; font-weight: 600; color: var(--text-main); margin-bott
 h4 { font-size: 0.875rem; font-weight: 600; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.025em; }
 
 .subtitle {
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
   font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -172,7 +187,8 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: none;
+  outline: 2px solid rgba(0,0,0,0.2);
+  outline-offset: 2px;
   border-color: var(--text-main);
 }
 
@@ -189,7 +205,7 @@ select:focus {
   padding: 0.125rem 0.5rem;
   border: 1px solid var(--border-light);
   border-radius: 4px;
-  font-size: 0.625rem;
+  font-size: var(--font-size-meta);
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text-secondary);
@@ -202,7 +218,7 @@ select:focus {
   margin-left: 4px;
   color: var(--text-muted);
   cursor: help;
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
 }
 
 /* Tables */
@@ -225,11 +241,21 @@ td {
   border-bottom: 1px solid var(--border-light);
 }
 
+a {
+  color: var(--text-main);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
 /* Footer */
 footer {
   padding: calc(var(--spacing-unit) * 6) 0;
   border-top: 1px solid var(--border-light);
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
   color: var(--text-muted);
   display: flex;
   justify-content: space-between;
