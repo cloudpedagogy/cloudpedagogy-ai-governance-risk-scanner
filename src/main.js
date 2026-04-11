@@ -19,10 +19,14 @@ let appState = {
     steps: [],
     summary: {
       overall_risk_score: 0,
+      inherent_risk_total: 0,
+      residual_risk_total: 0,
       high_risk_steps_count: 0,
       oversight_gaps_count: 0,
       ai_dependency_percentage: 0,
-      reflection_notes: ''
+      critical_path_alerts: [],
+      reflection_notes: '',
+      ignoredFieldsDetected: false
     }
   }
 };
@@ -121,7 +125,9 @@ function startNewAssessment() {
       high_risk_steps_count: 0,
       oversight_gaps_count: 0,
       ai_dependency_percentage: 0,
-      reflection_notes: ''
+      ai_dependency_percentage: 0,
+      reflection_notes: '',
+      ignoredFieldsDetected: false
     }
   };
   
@@ -185,6 +191,7 @@ function handleJsonImport() {
 
     if (steps.length === 0) throw new Error("No steps found in JSON");
 
+    // Recalculate all scores independently - Clear existing scores from input
     startNewAssessment();
     stepsContainer().innerHTML = '';
     steps.forEach(s => addStepRow({
@@ -193,6 +200,12 @@ function handleJsonImport() {
       ai_involved: s.ai_involved !== undefined ? s.ai_involved : true
     }));
     
+    // Explicitly ignore design_time_metrics if present
+    if (rawData.design_time_metrics) {
+      console.log("Scanner: Detected design-time metrics. These will be ignored for authoritative scoring.");
+      appState.assessment.summary.ignoredFieldsDetected = true;
+    }
+
     getEl('modal-import').style.display = 'none';
     getEl('import-area').value = '';
     switchView('view-input');
@@ -227,7 +240,13 @@ function proceedToAssessment() {
       oversight_notes: ''
     },
     failure_modes: [{ description: '', impact: '', cascade_effects: '' }],
-    mitigation: { controls: '', safeguards: '', monitoring: '' }
+    mitigation: { 
+      controls: '', 
+      safeguards: '', 
+      monitoring: '', 
+      effectiveness: 1, // Default to 1 (None)
+      residual_risk: 0 
+    }
   }));
 
   renderAssessmentForm();
@@ -330,25 +349,42 @@ function renderAssessmentForm() {
 
         <!-- Mitigation Planning -->
         <div style="grid-column: span 2;">
-          <h4>Mitigation Planning</h4>
+          <h4>Mitigation & Controls</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
             <div class="form-group">
               <label>Technical Controls</label>
-              <input type="text" class="mit-input" data-step="${index}" data-field="controls" placeholder="e.g. guardrails">
+              <input type="text" class="mit-input" data-step="${index}" data-field="controls" value="${step.mitigation.controls}" placeholder="e.g. guardrails">
             </div>
             <div class="form-group">
               <label>Governance Safeguards</label>
-              <input type="text" class="mit-input" data-step="${index}" data-field="safeguards" placeholder="e.g. peer review">
+              <input type="text" class="mit-input" data-step="${index}" data-field="safeguards" value="${step.mitigation.safeguards}" placeholder="e.g. peer review">
             </div>
             <div class="form-group">
               <label>Monitoring Requirements</label>
-              <input type="text" class="mit-input" data-step="${index}" data-field="monitoring" placeholder="e.g. audit logs">
+              <input type="text" class="mit-input" data-step="${index}" data-field="monitoring" value="${step.mitigation.monitoring}" placeholder="e.g. audit logs">
+            </div>
+          </div>
+          <div style="display: flex; gap: 2rem; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 4px; border: 1px solid var(--border-light);">
+            <div class="form-group" style="margin-bottom: 0; flex-grow: 1;">
+              <label style="margin-bottom: 0.5rem; display: block;">Mitigation Effectiveness (Strength of Controls)</label>
+              <select class="mit-input mit-effect-input" data-step="${index}" data-field="effectiveness">
+                <option value="1" ${step.mitigation.effectiveness == 1 ? 'selected' : ''}>1: None (No reduction)</option>
+                <option value="2" ${step.mitigation.effectiveness == 2 ? 'selected' : ''}>2: Weak (Subtle reduction)</option>
+                <option value="3" ${step.mitigation.effectiveness == 3 ? 'selected' : ''}>3: Partial (Moderate reduction)</option>
+                <option value="4" ${step.mitigation.effectiveness == 4 ? 'selected' : ''}>4: Strong (Significant reduction)</option>
+                <option value="5" ${step.mitigation.effectiveness == 5 ? 'selected' : ''}>5: Robust (Minimal residual risk)</option>
+              </select>
+            </div>
+            <div style="text-align: right; min-width: 150px;">
+              <span class="subtitle">Indicative Residual Risk <span class="audit-info" title="Indicative weight (not an absolute score)">ⓘ</span></span>
+              <div class="residual-risk-badge" id="residual-badge-${index}" style="font-size: 1.5rem; font-weight: 700;">-</div>
             </div>
           </div>
         </div>
       </div>
     `;
     container.appendChild(stepCard);
+    updateResidualDisplay(index);
   });
 
   // Attach listeners for data persistence
@@ -377,9 +413,37 @@ function renderAssessmentForm() {
   container.querySelectorAll('.mit-input').forEach(input => {
     input.addEventListener('change', (e) => {
       const { step, field } = e.target.dataset;
-      appState.assessment.steps[step].mitigation[field] = e.target.value;
+      const val = e.target.value;
+      appState.assessment.steps[step].mitigation[field] = field === 'effectiveness' ? parseInt(val) : val;
+      if (field === 'effectiveness') {
+        updateResidualDisplay(step);
+      }
     });
   });
+}
+
+function updateResidualDisplay(stepIdx) {
+  const step = appState.assessment.steps[stepIdx];
+  const severityValues = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
+  const likelihoodValues = { 'Unlikely': 1, 'Possible': 2, 'Likely': 3, 'Almost Certain': 4 };
+  const mitigationMultipliers = { 1: 1.0, 2: 0.8, 3: 0.6, 4: 0.4, 5: 0.2 };
+  
+  let maxInherent = 0;
+  Object.values(step.risks).forEach(r => {
+    const s = severityValues[r.severity] * likelihoodValues[r.likelihood];
+    if (s > maxInherent) maxInherent = s;
+  });
+  
+  const residual = Math.round(maxInherent * mitigationMultipliers[step.mitigation.effectiveness]);
+  const badge = document.getElementById(`residual-badge-${stepIdx}`);
+  if (badge) {
+    badge.textContent = residual;
+    let color = '#059669'; // Low
+    if (residual >= 4) color = '#D97706'; // Moderate
+    if (residual >= 9) color = '#DC2626'; // High
+    if (residual >= 16) color = '#111111'; // Critical
+    badge.style.color = color;
+  }
 }
 
 // --- Report Generation & Export ---
@@ -390,37 +454,71 @@ function generateFinalReport() {
 }
 
 function calculateScores() {
-  let totalScore = 0;
+  let inherentTotal = 0;
+  let residualTotal = 0;
   let highRiskCount = 0;
   let gapCount = 0;
   let aiSteps = 0;
   
-  const riskValues = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
+  const severityValues = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
   const likelihoodValues = { 'Unlikely': 1, 'Possible': 2, 'Likely': 3, 'Almost Certain': 4 };
+  const mitigationMultipliers = { 1: 1.0, 2: 0.8, 3: 0.6, 4: 0.4, 5: 0.2 };
 
   appState.assessment.steps.forEach(step => {
     if (step.ai_involved) aiSteps++;
     
-    let stepMaxRisk = 0;
+    let stepMaxInherent = 0;
     Object.values(step.risks).forEach(r => {
-      const score = riskValues[r.severity] * likelihoodValues[r.likelihood];
-      if (score > stepMaxRisk) stepMaxRisk = score;
+      const score = severityValues[r.severity] * likelihoodValues[r.likelihood];
+      if (score > stepMaxInherent) stepMaxInherent = score;
     });
     
-    totalScore += stepMaxRisk;
-    if (stepMaxRisk >= 9) highRiskCount++; // High severity + Likely or similar
+    step.inherent_risk = stepMaxInherent;
+    step.residual_risk = Math.round(stepMaxInherent * mitigationMultipliers[step.mitigation.effectiveness]);
+    
+    inherentTotal += step.inherent_risk;
+    residualTotal += step.residual_risk;
+    
+    if (step.residual_risk >= 9) highRiskCount++; // Authoritative High Risk threshold
     
     if (step.ai_involved && !step.oversight.human_review_present) gapCount++;
     if (!step.oversight.accountability_defined || !step.oversight.escalation_defined) gapCount++;
   });
 
-    appState.assessment.summary.overall_risk_score = Math.round(totalScore / (appState.assessment.steps.length || 1));
-    appState.assessment.summary.high_risk_steps_count = highRiskCount;
-    appState.assessment.summary.oversight_gaps_count = gapCount;
-    appState.assessment.summary.ai_dependency_percentage = Math.round((aiSteps / (appState.assessment.steps.length || 1)) * 100);
+  const avgResidual = Math.round(residualTotal / (appState.assessment.steps.length || 1));
+  appState.assessment.summary.overall_risk_score = avgResidual;
+  appState.assessment.summary.inherent_risk_total = inherentTotal;
+  appState.assessment.summary.residual_risk_total = residualTotal;
+  appState.assessment.summary.high_risk_steps_count = highRiskCount;
+  appState.assessment.summary.oversight_gaps_count = gapCount;
+  appState.assessment.summary.ai_dependency_percentage = Math.round((aiSteps / (appState.assessment.steps.length || 1)) * 100);
+  
+  // Critical Path Analysis
+  appState.assessment.summary.critical_path_alerts = [];
+  const steps = appState.assessment.steps;
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
     
-    // Systemic Fragility Logic
-    appState.assessment.summary.systemic_fragility = gapCount > (appState.assessment.steps.length * 0.5) || highRiskCount > 0;
+    // Rule: Critical residual risk + lacks accountability or escalation
+    if (step.residual_risk >= 16 && (!step.oversight.accountability_defined || !step.oversight.escalation_defined)) {
+      appState.assessment.summary.critical_path_alerts.push(`Critical Sensitivity Node: ${step.step_name} (High risk with zero accountability)`);
+    }
+
+    // Rule: Two consecutive steps have high residual risk (>=9)
+    if (i < steps.length - 1) {
+      if (step.residual_risk >= 9 && steps[i+1].residual_risk >= 9) {
+        appState.assessment.summary.critical_path_alerts.push(`Cascading Risk Failure: Consecutive high-risk steps detected at "${step.step_name}" and "${steps[i+1].step_name}"`);
+      }
+    }
+
+    // Rule: Three adjacent steps each have at least moderate residual risk (>=4)
+    if (i < steps.length - 2) {
+      if (step.residual_risk >= 4 && steps[i+1].residual_risk >= 4 && steps[i+2].residual_risk >= 4) {
+        appState.assessment.summary.critical_path_alerts.push(`Systemic Fragility: Sequence of moderate risks detected around "${step.step_name}"`);
+      }
+    }
+  }
 }
 
 function renderReport() {
@@ -434,7 +532,7 @@ function renderReport() {
 
   container.innerHTML = `
     <div class="card" style="border-top: 4px solid var(--border-strong);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
         <div>
           <span class="subtitle">Governance Risk Report</span>
           <h2>Assessment Summary</h2>
@@ -445,42 +543,60 @@ function renderReport() {
         </div>
       </div>
 
+      <div class="disclosure-banner" style="display: flex; justify-content: space-between; align-items: center;">
+        <span><strong>Audit Independence</strong>: Audit scored independently. Design-time metrics are not used.</span>
+        <span class="audit-info" title="Purpose: Ensures independent re-audit and avoids bias from upstream design data.">ⓘ</span>
+      </div>
+
+      ${summary.ignoredFieldsDetected ? `
+        <div style="margin-bottom: 2rem; font-size: 0.8rem; color: var(--text-secondary); font-style: italic;">
+          Note: Some input fields (e.g. design-time metrics) were detected in the source data and have been ignored in this audit calculation.
+        </div>
+      ` : ''}
+
       <div class="audit-grid" style="grid-template-columns: repeat(4, 1fr);">
         <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
-          <span class="subtitle">Overall Profile</span>
-          <div style="font-size: 1.25rem; font-weight: 700;">${riskLevel}</div>
+          <span class="subtitle">Overall Risk Score</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${summary.overall_risk_score} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">(${riskLevel})</span></div>
         </div>
         <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
-          <span class="subtitle">High Risk Steps</span>
-          <div style="font-size: 1.25rem; font-weight: 700;">${summary.high_risk_steps_count}</div>
+          <span class="subtitle">Authoritative Profile</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${summary.residual_risk_total} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">Residual</span></div>
         </div>
         <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
-          <span class="subtitle">Oversight Gaps</span>
-          <div style="font-size: 1.25rem; font-weight: 700;">${summary.oversight_gaps_count}</div>
+          <span class="subtitle">Critical Gaps</span>
+          <div style="font-size: 1.25rem; font-weight: 700;">${summary.oversight_gaps_count} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">Alerts</span></div>
         </div>
         <div style="text-align: left; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
-          <span class="subtitle">AI Dependency</span>
+          <span class="subtitle">AI dependency</span>
           <div style="font-size: 1.25rem; font-weight: 700;">${summary.ai_dependency_percentage}%</div>
         </div>
       </div>
 
+      ${summary.critical_path_alerts.length > 0 ? `
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #FFF1F2; border: 1px solid #FECACA; border-radius: var(--radius);">
+          <h4 style="color: #991B1B; margin-bottom: 1rem;">Critical Path Analysis (Structural Risks)</h4>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            ${summary.critical_path_alerts.map(a => `
+              <li style="color: #B91C1C; font-size: 0.875rem; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+                <span style="font-weight: 700;">❗</span> ${a}
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      ` : ''}
+
       <div style="margin-top: 3rem;">
-        <h4>Systemic Risk Heatmap</h4>
+        <h4>Operational Risk Heatmap (Residual Risk)</h4>
         <div style="display: flex; gap: 4px; height: 12px; margin-top: 1rem;">
           ${appState.assessment.steps.map(step => {
-            let maxScore = 0;
-            const riskValues = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
-            const likelihoodValues = { 'Unlikely': 1, 'Possible': 2, 'Likely': 3, 'Almost Certain': 4 };
-            Object.values(step.risks).forEach(r => {
-              const s = riskValues[r.severity] * likelihoodValues[r.likelihood];
-              if (s > maxScore) maxScore = s;
-            });
-            // Monochrome scale based on risk
-            let color = '#f3f4f6'; // Low
-            if (maxScore > 4) color = '#d1d5db'; // Moderate
-            if (maxScore > 8) color = '#4b5563'; // High
-            if (maxScore > 12) color = '#111111'; // Critical
-            return `<div title="${step.step_name}: Score ${maxScore}" style="flex-grow: 1; background: ${color}; border-radius: 1px;"></div>`;
+            const res = step.residual_risk;
+            // Monochrome scale based on residual risk
+            let color = '#f3f4f6'; // Low (<4)
+            if (res >= 4) color = '#d1d5db'; // Moderate
+            if (res >= 9) color = '#4b5563'; // High
+            if (res >= 16) color = '#111111'; // Critical
+            return `<div title="${step.step_name}: Residual Score ${res}" style="flex-grow: 1; background: ${color}; border-radius: 1px;"></div>`;
           }).join('')}
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-top: 8px; font-family: var(--font-mono);">
@@ -488,6 +604,18 @@ function renderReport() {
           <span>END</span>
         </div>
       </div>
+
+      <details style="margin-top: 2rem; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius);">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary); font-size: 0.875rem;">Scoring Methodology & Rules</summary>
+        <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
+          <ul style="padding-left: 1.2rem;">
+            <li><strong>Inherent Risk</strong>: Derived from Severity (1-4) × Likelihood (1-4) per dimension.</li>
+            <li><strong>Mitigation Strength</strong>: Controls reduce inherent score by 0% to 80%.</li>
+            <li><strong>Contribution Weight</strong>: Individual risk scores represent indicative weights, not absolute values.</li>
+            <li><strong>Overall Score</strong>: Calculated as the average residual risk across all workflow steps.</li>
+          </ul>
+        </div>
+      </details>
     </div>
 
     <h3 style="margin-top: 4rem; margin-bottom: 2rem;">Detailed Step Analysis</h3>
@@ -503,7 +631,12 @@ function renderReport() {
             <ul style="font-size: 0.875rem; list-style: none; margin-top: 1rem; padding: 0;">
               <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);">Human Review <span>${step.oversight.human_review_present ? '✓' : '—'}</span></li>
               <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);">Accountability <span>${step.oversight.accountability_defined ? '✓' : '—'}</span></li>
-              <li style="display: flex; justify-content: space-between; padding: 0.5rem 0;">Escalation Path <span>${step.oversight.escalation_defined ? '✓' : '—'}</span></li>
+              <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);">Escalation Path <span>${step.oversight.escalation_defined ? '✓' : '—'}</span></li>
+              <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600; color: var(--text-main);">
+                Contribution Weight 
+                <span class="audit-info" title="Indicative weight (not an absolute score)">ⓘ</span>
+                <span>${step.residual_risk}</span>
+              </li>
             </ul>
           </div>
           <div>
@@ -575,23 +708,48 @@ document.getElementById('export-json').addEventListener('click', () => {
 });
 
 document.getElementById('export-markdown').addEventListener('click', () => {
-  let md = `# Governance Risk Report\n\n`;
-  md += `**Date**: ${new Date(appState.assessment.workflow_metadata.date_created).toLocaleDateString()}\n`;
-  md += `**Assessment ID**: ${appState.assessment.workflow_metadata.assessment_id}\n\n`;
+  let md = `# Governance Risk Audit Report\n\n`;
+  md += `**Workflow ID**: ${appState.assessment.workflow_metadata.workflow_id}\n`;
+  md += `**Assessment ID**: ${appState.assessment.workflow_metadata.assessment_id}\n`;
+  md += `**Audit Date**: ${new Date(appState.assessment.workflow_metadata.date_created).toLocaleDateString()}\n`;
+  md += `**Assessor**: ${appState.assessment.workflow_metadata.assessor_name}\n\n`;
   
-  md += `## Executive Summary\n`;
-  md += `- **AI Dependency**: ${appState.assessment.summary.ai_dependency_percentage}%\n`;
-  md += `- **Oversight Gaps Detected**: ${appState.assessment.summary.oversight_gaps_count}\n`;
-  md += `- **High Risk Steps**: ${appState.assessment.summary.high_risk_steps_count}\n\n`;
+  md += `## 1. Executive Summary\n`;
+  md += `- **Overall Residual Risk Score**: ${appState.assessment.summary.overall_risk_score}\n`;
+  md += `- **Total Inherent Risk**: ${appState.assessment.summary.inherent_risk_total}\n`;
+  md += `- **Total Residual Risk**: ${appState.assessment.summary.residual_risk_total}\n`;
+  md += `- **Critical Governance Gaps**: ${appState.assessment.summary.oversight_gaps_count}\n`;
+  md += `- **AI Dependency**: ${appState.assessment.summary.ai_dependency_percentage}%\n\n`;
 
-  md += `## Detailed Analysis\n`;
+  if (appState.assessment.summary.critical_path_alerts.length > 0) {
+    md += `## 2. Critical Path Analysis (Structural Risks)\n`;
+    appState.assessment.summary.critical_path_alerts.forEach(a => {
+      md += `- ❗ **ALERT**: ${a}\n`;
+    });
+    md += `\n`;
+  }
+ 
+  md += `## 3. Detailed Step Audit\n`;
   appState.assessment.steps.forEach(step => {
     md += `### Step: ${step.step_name}\n`;
-    md += `- **AI Involved**: ${step.ai_involved ? 'Yes' : 'No'}\n`;
-    md += `- **Human Oversight**: ${step.oversight.human_review_present ? 'Yes' : 'No'}\n`;
-    md += `- **Primary Failure Mode**: ${step.failure_modes[0].description || 'N/A'}\n`;
-    md += `- **Mitigation Strategy**: ${step.mitigation.controls || 'N/A'}\n\n`;
+    md += `| Category | Value |\n`;
+    md += `| :--- | :--- |\n`;
+    md += `| **AI Involved** | ${step.ai_involved ? 'Yes' : 'No'} |\n`;
+    md += `| **Inherent Risk** | ${step.inherent_risk} |\n`;
+    md += `| **Mitigation Strength** | ${step.mitigation.effectiveness} / 5 |\n`;
+    md += `| **Residual Risk** | ${step.residual_risk} |\n`;
+    md += `| **Human Review** | ${step.oversight.human_review_present ? 'Identified' : 'MISSING'} |\n`;
+    
+    md += `\n**Failure Mode**: ${step.failure_modes[0].description || 'N/A'}\n`;
+    md += `**Control Strategy**: ${step.mitigation.controls || 'N/A'}\n\n`;
+    md += `---\n\n`;
   });
+
+  md += `## 4. Governance Reflection\n`;
+  md += `${appState.assessment.summary.reflection_notes || 'No reflection notes provided.'}\n\n`;
+
+  md += `> [!NOTE]\n`;
+  md += `> This report provides an authoritative operational audit of the workflow. All scores are calculated independently of design-time indicators.\n`;
 
   const blob = new Blob([md], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
@@ -628,7 +786,12 @@ const healthcareDemo = {
         oversight_notes: "Critically lacks clinician-in-the-loop before triage recommendation."
       },
       failure_modes: [{ description: "AI misidentifies stroke as migraine", impact: "Delayed emergency intervention", cascade_effects: "Patient mortality risk increases significantly." }],
-      mitigation: { controls: "Deterministic rules layer", safeguards: "Clinician override mandatory", monitoring: "Daily accuracy audits" }
+      mitigation: { 
+        controls: "Deterministic rules layer", 
+        safeguards: "Clinician override mandatory", 
+        monitoring: "Daily accuracy audits",
+        effectiveness: 3 
+      }
     },
     {
       step_id: "step-2",
@@ -648,7 +811,12 @@ const healthcareDemo = {
         oversight_notes: "Human doctor reviews AI suggestions."
       },
       failure_modes: [{ description: "Human error in review", impact: "Incorrect diagnosis", cascade_effects: "Localized to single patient." }],
-      mitigation: { controls: "Second opinion policy", safeguards: "Board certification", monitoring: "Peer review" }
+      mitigation: { 
+        controls: "Second opinion policy", 
+        safeguards: "Board certification", 
+        monitoring: "Peer review",
+        effectiveness: 5
+      }
     },
     {
       step_id: "step-3",
@@ -668,7 +836,12 @@ const healthcareDemo = {
         oversight_notes: "No escalation path defined for drug conflict alerts."
       },
       failure_modes: [{ description: "Lethal drug interaction missed", impact: "Patient injury", cascade_effects: "Legal liability and systemic recall of model version." }],
-      mitigation: { controls: "Drug lookup API", safeguards: "Pharmacist final check", monitoring: "Incident log" }
+      mitigation: { 
+        controls: "Drug lookup API", 
+        safeguards: "Pharmacist final check", 
+        monitoring: "Incident log",
+        effectiveness: 3
+      }
     }
   ],
   summary: {

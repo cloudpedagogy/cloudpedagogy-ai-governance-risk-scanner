@@ -2,6 +2,25 @@
 
 A governance-first analysis tool for identifying risk, fragility, and oversight gaps in AI-supported workflows and decision systems.
 
+## 🔗 Role in the CloudPedagogy Ecosystem
+
+**Phase:** Phase 2 — Governance Pipeline
+
+**Role:**
+Performs authoritative, independent audits of AI-supported workflows to identify fragility, risk concentrations, and oversight gaps.
+
+**Upstream Inputs:**
+Structured workflow definitions from the **Workflow Governance Designer** or manual user input.
+
+**Downstream Outputs:**
+Generates risk profiles and remediation flags for the **Human-AI Decision Record** and **Governance Maturity Assessment**.
+
+**Does NOT:**
+- Act as a design environment for new workflows.
+- Record live individual decision outcomes in production.
+
+For a full system overview, see: [SYSTEM_OVERVIEW.md](../SYSTEM_OVERVIEW.md)
+
 ---
 
 ## 🚀 Overview
@@ -52,11 +71,45 @@ Decision → Workflow → Risk → Capability
 - **AI Dependency Analysis**  
   Assess the level and concentration of AI reliance across the workflow  
 
-- **Risk Scoring System**  
-  Generate overall and step-level governance risk profiles to support review and audit  
+- **Authoritative Risk Scoring**  
+  Calculate **Inherent Risk** (Severity × Likelihood) and **Residual Risk** using institutional mitigation multipliers (None to Robust).  
+
+- **Critical Path Analysis**  
+  Identify structural vulnerabilities such as high-risk clusters, single points of failure, and systemic fragility.
+
+- **Mitigation Effectiveness Mapping**  
+  Score control strength on a 1–5 scale to determine the practical reduction in operational risk.
 
 - **Governance-Ready Exports**  
-  Export structured outputs as JSON, Markdown, or print-ready PDF for institutional use  
+  Generate structured audit reports as JSON or Markdown, optimized for institutional governance review.
+
+---
+
+## ⚙️ Input Schema / Expected JSON Structure
+
+The Risk Scanner is designed for high-fidelity interoperability with the **AI Workflow Governance Designer**. It identifies and ingestion steps and AI metadata to automate the baseline audit setup.
+
+### Expected JSON Format
+```json
+{
+  "metadata": {
+    "workflow_id": "WF-2026-X",
+    "workflow_title": "Automated Admissions Review"
+  },
+  "steps": [
+    {
+      "step_id": "step-1",
+      "step_name": "Initial Screening",
+      "ai_involved": true
+    }
+  ]
+}
+```
+
+### Independent Audit Principle
+The Risk Scanner performs an **authoritative, independent audit**. 
+- It may explicitly **ignore upstream design-time metrics** (e.g., `design_time_metrics` or pre-calculated design scores).
+- This is an intentional governance constraint to ensure the audit remains objective, fresh, and uninfluenced by design-phase assumptions.
 
 ---
 

@@ -268,3 +268,42 @@ footer {
   #app { padding: 0; max-width: 100%; }
   .card { border: 1px solid #000; box-shadow: none; break-inside: avoid; }
 }
+
+/* UX Clarity Enhancements */
+.disclosure-banner {
+  border-left: 4px solid var(--text-main);
+  background-color: #f9fafb;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  font-size: 0.875rem;
+}
+
+details summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+details summary::before {
+  content: '▶';
+  font-size: 0.6rem;
+  transition: transform 0.2s;
+}
+
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.audit-info {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.audit-info:hover {
+  opacity: 1;
+}
